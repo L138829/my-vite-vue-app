@@ -32,24 +32,28 @@
     <!-- 右侧内容区 -->
     <main class="content">
       <!-- 光谱原始数据表格 -->
-      <div v-if="selectedIndicator === '光谱原始数据'" class="table-wrapper" style="width: 800px; margin-left: 200px;">
+      <div
+        v-if="selectedIndicator === '光谱原始数据'"
+        class="table-wrapper"
+        style="width: 800px; margin-left: 200px;"
+      >
         <el-table
           :data="paginatedData"
           stripe
           style="width: 800px;"
         >
-          <el-table-column prop="index" label="序号" width="80" />
-          <el-table-column prop="spectData" label="光谱原始数据">
+          <el-table-column prop="id" label="序号" width="80" />
+          <el-table-column prop="time" label="时间" width="180" />
+          <el-table-column prop="content" label="光谱原始数据">
             <template #default="{ row }">
-              <div class="ellipsis">{{ row.spectData }}</div>
+              <div class="ellipsis">{{ row.content }}</div>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="80">
             <template #default="{ row }">
-              <el-button
-                type="text"
-                @click="openFullData(row.spectData)"
-              >查看</el-button>
+              <el-button type="text" @click="openFullData(row.content)">
+                查看
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -65,12 +69,34 @@
         />
       </div>
 
-      <!-- 河流/其它指标图片 -->
-      <div v-else-if="selectedRiver" class="image-wrapper">
-        <img :src="imageUrl" :alt="imageAlt" class="river-image" @click="toggleFullscreen" />
+      <!-- 河流图片展示 -->
+      <div
+        v-else-if="selectedRiver"
+        class="image-wrapper"
+      >
+        <img
+          :src="imageUrl"
+          :alt="imageAlt"
+          class="river-image"
+          @click="toggleFullscreen"
+        />
+        <!-- 新增文字说明 -->
+        <div class="image-caption">
+          注明：遥感影像来自于哨兵一号卫星，卫星定位精度10m。
+        </div>
       </div>
-      <div v-else-if="selectedIndicator" class="image-wrapper">
-        <img :src="imageUrl" :alt="imageAlt" class="indicator-image" @click="toggleFullscreen" />
+
+      <!-- 其它指标图片展示 -->
+      <div
+        v-else-if="selectedIndicator"
+        class="image-wrapper"
+      >
+        <img
+          :src="imageUrl"
+          :alt="imageAlt"
+          class="indicator-image"
+          @click="toggleFullscreen"
+        />
       </div>
 
       <!-- 未选择提示 -->
@@ -79,12 +105,24 @@
       </div>
 
       <!-- 全屏查看图片 -->
-      <div v-if="isFullscreen" class="fullscreen-wrapper" @click="toggleFullscreen">
-        <img :src="imageUrl" :alt="imageAlt" class="fullscreen-image" />
+      <div
+        v-if="isFullscreen"
+        class="fullscreen-wrapper"
+        @click="toggleFullscreen"
+      >
+        <img
+          :src="imageUrl"
+          :alt="imageAlt"
+          class="fullscreen-image"
+        />
       </div>
 
       <!-- 全屏查看原始数据 -->
-      <div v-if="isDataFullScreen" class="data-overlay" @click="closeFullData">
+      <div
+        v-if="isDataFullScreen"
+        class="data-overlay"
+        @click="closeFullData"
+      >
         <pre class="full-text">{{ fullDataText }}</pre>
       </div>
     </main>
@@ -147,9 +185,8 @@ export default {
       rawData: [],
       currentPage: 1,
       pageSize: 10,
-      tableHeight: 400,
 
-      // 文本全屏展示
+      // 全屏查看原始数据
       isDataFullScreen: false,
       fullDataText: ''
     }
@@ -180,21 +217,25 @@ export default {
     selectRiver(r)   {
       this.selectedRiver = r
       this.selectedIndicator = null
-      this.isFullscreen = false
+      this.isDataFullScreen = false
     },
     selectIndicator(ind) {
       this.selectedIndicator = ind
       this.selectedRiver = null
-      this.isFullscreen = false
+      this.currentPage = 1
+      this.isDataFullScreen = false
+
       if (ind === '光谱原始数据') {
-        this.rawData = spectralList.map((it, i) => ({
-          index: i + 1,
-          spectData: it.raw_spec_text
+        this.rawData = spectralList.map(item => ({
+          id:      item.id,
+          time:    item.time,
+          content: item.content
         }))
-        this.currentPage = 1
       }
     },
-    handlePageChange(page) { this.currentPage = page },
+    handlePageChange(page) {
+      this.currentPage = page
+    },
     openFullData(text) {
       this.fullDataText = text
       this.isDataFullScreen = true
@@ -259,8 +300,14 @@ export default {
   position: relative;
 }
 .table-wrapper {
-  width: 800px;
+  
+  width: calc(100% - 220px); /* 200px 是侧边栏宽度，加20px留出间隙 */
   margin-left: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-sizing: border-box;
 }
 .ellipsis {
   white-space: nowrap;
@@ -268,7 +315,6 @@ export default {
   text-overflow: ellipsis;
 }
 
-/* 全屏文本覆盖 */
 .data-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -279,25 +325,21 @@ export default {
   align-items: center;
   z-index: 2000;
 }
-/* 替换原来的 .full-text 样式 */
 .full-text {
-  white-space: pre-wrap;    /* 换行 */
-  word-break: break-all;    /* 长词语也能换行 */
-  overflow-y: auto;         /* 只允许纵向滚动 */
-  overflow-x: hidden;       /* 禁止横向滚动 */
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto;
   padding: 20px;
   background: #fff;
   max-height: 90vh;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-
 .image-wrapper {
-  width: calc(100% - 200px);
+  width: 100%;
+  max-width: 1400px;
+  max-height: 900px;
   margin-left: 200px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 .river-image, .indicator-image {
   max-width: 100%;
@@ -325,4 +367,11 @@ export default {
   max-height: 90%;
   object-fit: contain;
 }
+.image-caption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
 </style>
