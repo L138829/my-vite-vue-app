@@ -27,6 +27,19 @@
           @click="selectIndicator(ind)"
         >{{ ind }}</li>
       </ul>
+
+      <!-- <div class="menu-title" @click="toggleMenu3">
+        <span>监测枪机</span>
+        <span class="arrow" :class="{ open: isOpen3 }">▸</span>
+      </div>
+      <ul v-show="isOpen3" class="menu-list">
+        <li
+          v-for="(camera, i) in monitoringCameras"
+          :key="i"
+          :class="{ active: selectedCamera === camera }"
+          @click="selectCamera(camera)"
+        >{{ camera }}</li>
+      </ul> -->
     </aside>
 
     <!-- 右侧内容区 -->
@@ -62,7 +75,7 @@
           background
           layout="prev, pager, next"
           :page-size="pageSize"
-          v-model:current-page="currentPage"
+          :current-page.sync="currentPage"
           :total="rawData.length"
           @current-change="handlePageChange"
           style="width: 800px; text-align: right; margin-top: 10px;"
@@ -95,6 +108,19 @@
           :src="imageUrl"
           :alt="imageAlt"
           class="indicator-image"
+          @click="toggleFullscreen"
+        />
+      </div>
+
+      <!-- 摄像头图片展示 -->
+      <div
+        v-else-if="selectedCamera"
+        class="image-wrapper"
+      >
+        <img
+          :src="imageUrl"
+          :alt="imageAlt"
+          class="camera-image"
           @click="toggleFullscreen"
         />
       </div>
@@ -160,6 +186,10 @@ const indicatorImageMap = {
   '溶解氧': '溶解氧.png'
 }
 
+const cameraImageMap = {
+  '武陵渣场收集池': 'wuling.png'
+};
+
 export default {
   name: 'Water',
   components: {
@@ -176,10 +206,13 @@ export default {
         '透明度','藻蓝蛋白','营养状态指数','化学需氧量',
         '总有机碳','溶解氧','光谱原始数据'
       ],
+      monitoringCameras: ['武陵渣场收集池'],
       selectedRiver: '大宁河',
       selectedIndicator: null,
+      selectedCamera: null,
       isOpen: true,
       isOpen2: false,
+      isOpen3: false,
       isFullscreen: false,
 
       rawData: [],
@@ -205,23 +238,30 @@ export default {
         const f = riverImageMap[this.selectedRiver]
         return images[`../Picture/${f}`] || ''
       }
+      if (this.selectedCamera) {
+        const f = cameraImageMap[this.selectedCamera]
+        return images[`../Picture/${f}`] || ''
+      }
       return ''
     },
     imageAlt() {
-      return this.selectedIndicator || this.selectedRiver || ''
+      return this.selectedIndicator || this.selectedRiver || this.selectedCamera || ''
     }
   },
   methods: {
     toggleMenu()     { this.isOpen = !this.isOpen },
     toggleMenu2()    { this.isOpen2 = !this.isOpen2 },
+    toggleMenu3()    { this.isOpen3 = !this.isOpen3 },
     selectRiver(r)   {
       this.selectedRiver = r
       this.selectedIndicator = null
+      this.selectedCamera = null
       this.isDataFullScreen = false
     },
     selectIndicator(ind) {
       this.selectedIndicator = ind
       this.selectedRiver = null
+      this.selectedCamera = null
       this.currentPage = 1
       this.isDataFullScreen = false
 
@@ -232,6 +272,12 @@ export default {
           content: item.content
         }))
       }
+    },
+    selectCamera(camera) {
+      this.selectedCamera = camera
+      this.selectedRiver = null
+      this.selectedIndicator = null
+      this.isDataFullScreen = false
     },
     handlePageChange(page) {
       this.currentPage = page
@@ -341,7 +387,7 @@ export default {
   max-height: 900px;
   margin-left: 200px;
 }
-.river-image, .indicator-image {
+.river-image, .indicator-image, .camera-image {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
